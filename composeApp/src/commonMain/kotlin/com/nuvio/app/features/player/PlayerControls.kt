@@ -644,6 +644,13 @@ private fun PlayerHeader(
             }
 
             if (showActions) {
+                var topMenuExpanded by remember { mutableStateOf(false) }
+                val rotationAngle by animateFloatAsState(
+                    targetValue = if (topMenuExpanded) 90f else 0f,
+                    animationSpec = tween(durationMillis = 200),
+                    label = "horizontalMenuRotation"
+                )
+
                 Row(
                     horizontalArrangement = Arrangement.spacedBy(10.dp),
                     verticalAlignment = Alignment.CenterVertically,
@@ -657,6 +664,30 @@ private fun PlayerHeader(
                             onClick = onDiscTitlesClick,
                         )
                     }
+
+                    // Horizontal slide-out container for secondary controls
+                    AnimatedVisibility(
+                        visible = topMenuExpanded,
+                        enter = fadeIn() + expandHorizontally(expandFrom = Alignment.End),
+                        exit = fadeOut() + shrinkHorizontally(shrinkTowards = Alignment.End)
+                    ) {
+                        Row(
+                            horizontalArrangement = Arrangement.spacedBy(10.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                        ) {
+                            // Secondary buttons slide out horizontally here
+                        }
+                    }
+
+                    // Rotating 3-dot toggle button
+                    PlayerHeaderIconButton(
+                        icon = Icons.Rounded.MoreVert,
+                        contentDescription = "More Controls",
+                        buttonSize = metrics.headerIconSize + 16.dp,
+                        iconSize = metrics.headerIconSize,
+                        onClick = { topMenuExpanded = !topMenuExpanded },
+                        modifier = Modifier.graphicsLayer { rotationZ = rotationAngle }
+                    )
                     val topButtons = PlayerSettingsRepository.uiState.collectAsState().value.legacyTopButtons
                     topButtons.visibleButtons.forEach { button ->
                         key(button) {
