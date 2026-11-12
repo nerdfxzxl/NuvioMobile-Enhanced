@@ -1,14 +1,11 @@
+package com.nuvio.app.features.player
 
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.expandHorizontally
 import androidx.compose.animation.shrinkHorizontally
-import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.MoreVert
-
-package com.nuvio.app.features.player
-
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
