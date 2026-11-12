@@ -1,10 +1,5 @@
 package com.nuvio.app.features.player
 
-import androidx.compose.animation.AnimatedVisibility
-import androidx.compose.animation.fadeIn
-import androidx.compose.animation.fadeOut
-import androidx.compose.animation.expandHorizontally
-import androidx.compose.animation.shrinkHorizontally
 import androidx.compose.material.icons.rounded.MoreVert
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
@@ -34,7 +29,6 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.ListAlt
 import androidx.compose.material.icons.automirrored.rounded.OpenInNew
-import androidx.compose.material.icons.rounded.Album
 import androidx.compose.material.icons.rounded.Build
 import androidx.compose.material.icons.rounded.Flag
 import androidx.compose.material.icons.rounded.Groups
@@ -92,7 +86,6 @@ import androidx.compose.ui.graphics.painter.Painter
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.input.pointer.PointerEventPass
 import androidx.compose.ui.input.pointer.pointerInput
-import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
@@ -298,7 +291,6 @@ internal fun PlayerControlsShell(
                     titleLogo = titleLogo,
                     showTitleLogo = showTitleLogo,
                     streamTitle = streamTitle,
-                    providerName = providerName,
                     seasonNumber = seasonNumber,
                     episodeNumber = episodeNumber,
                     episodeTitle = episodeTitle,
@@ -323,7 +315,6 @@ internal fun PlayerControlsShell(
                     onPartyClick = onPartyClick,
                     partyActive = partyActive,
                     onSwitchEngineClick = onSwitchEngineClick,
-                    onDiscTitlesClick = onDiscTitlesClick,
                     onBack = onBack,
                     modifier = Modifier
                         .align(Alignment.TopStart)
@@ -534,7 +525,6 @@ private fun PlayerHeader(
     titleLogo: String?,
     showTitleLogo: Boolean,
     streamTitle: String,
-    providerName: String,
     seasonNumber: Int?,
     episodeNumber: Int?,
     episodeTitle: String?,
@@ -559,7 +549,6 @@ private fun PlayerHeader(
     onPartyClick: (() -> Unit)?,
     partyActive: Boolean,
     onSwitchEngineClick: (() -> Unit)? = null,
-    onDiscTitlesClick: (() -> Unit)? = null,
     onBack: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
@@ -575,8 +564,21 @@ private fun PlayerHeader(
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.Top,
         ) {
+            if (showActions) {
+                NuvioBackButton(
+                    onClick = onBack,
+                    modifier = Modifier.playerLiquidGlass(CircleShape, refractionHeight = 6.dp, refractionAmount = 8.dp),
+                    shape = CircleShape,
+                    containerColor = Color.Transparent,
+                    contentColor = Color.White,
+                    buttonSize = metrics.headerIconSize + 16.dp,
+                    iconSize = metrics.headerIconSize,
+                    contentDescription = stringResource(Res.string.compose_player_close),
+                )
+            }
+
             Box(
-                modifier = Modifier.weight(1f),
+                modifier = Modifier.weight(1f).padding(horizontal = 10.dp),
             ) {
                 Column(
                     modifier = Modifier.graphicsLayer { alpha = metadataAlpha },
@@ -628,17 +630,6 @@ private fun PlayerHeader(
                             maxLines = 1,
                             overflow = TextOverflow.Ellipsis,
                         )
-                        Text(
-                            text = providerName,
-                            style = typeScale.labelSm.copy(
-                                fontSize = metrics.metadataSize,
-                                lineHeight = metrics.metadataSize * 1.25f,
-                                fontStyle = FontStyle.Italic,
-                            ),
-                            color = Color.White.copy(alpha = 0.7f),
-                            maxLines = 1,
-                            overflow = TextOverflow.Ellipsis,
-                        )
                     }
                 }
                 ParentalGuideOverlay(
@@ -648,6 +639,8 @@ private fun PlayerHeader(
                     contentPadding = PaddingValues(0.dp),
                 )
             }
+
+            val topButtons = PlayerSettingsRepository.uiState.collectAsState().value.legacyTopButtons
 
             if (showActions) {
                 var topMenuExpanded by remember { mutableStateOf(false) }
@@ -661,27 +654,138 @@ private fun PlayerHeader(
                     horizontalArrangement = Arrangement.spacedBy(10.dp),
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
-                    if (onDiscTitlesClick != null) {
-                        PlayerHeaderIconButton(
-                            icon = Icons.Rounded.Album,
-                            contentDescription = stringResource(Res.string.player_disc_titles),
-                            buttonSize = metrics.headerIconSize + 16.dp,
-                            iconSize = metrics.headerIconSize,
-                            onClick = onDiscTitlesClick,
-                        )
-                    }
-
-                    // Horizontal slide-out container for secondary controls
-                    AnimatedVisibility(
-                        visible = topMenuExpanded,
-                        enter = fadeIn() + expandHorizontally(expandFrom = Alignment.End),
-                        exit = fadeOut() + shrinkHorizontally(shrinkTowards = Alignment.End)
-                    ) {
-                        Row(
-                            horizontalArrangement = Arrangement.spacedBy(10.dp),
-                            verticalAlignment = Alignment.CenterVertically,
-                        ) {
-                            // Secondary buttons slide out horizontally here
+                    if (topMenuExpanded) {
+                        topButtons.visibleButtons.forEach { button ->
+                            key(button) {
+                                when (button) {
+                                    LegacyTopButton.SUBMIT_INTRO -> {
+                                        if (onSubmitIntroClick != null) {
+                                            PlayerHeaderIconButton(
+                                                icon = Icons.Rounded.Flag,
+                                                contentDescription = stringResource(Res.string.submit_intro_action),
+                                                buttonSize = metrics.headerIconSize + 16.dp,
+                                                iconSize = metrics.headerIconSize,
+                                                onClick = onSubmitIntroClick,
+                                            )
+                                        }
+                                    }
+                                    LegacyTopButton.EXTERNAL_PLAYER -> {
+                                        if (onOpenInExternalPlayer != null) {
+                                            PlayerHeaderIconButton(
+                                                icon = Icons.AutoMirrored.Rounded.OpenInNew,
+                                                contentDescription = stringResource(Res.string.streams_open_external_player),
+                                                buttonSize = metrics.headerIconSize + 16.dp,
+                                                iconSize = metrics.headerIconSize,
+                                                onClick = onOpenInExternalPlayer,
+                                            )
+                                        }
+                                    }
+                                    LegacyTopButton.SWITCH_ENGINE -> {
+                                        if (onSwitchEngineClick != null) {
+                                            PlayerHeaderIconButton(
+                                                icon = Icons.Rounded.SwapHoriz,
+                                                contentDescription = stringResource(Res.string.cd_switch_player_engine),
+                                                buttonSize = metrics.headerIconSize + 16.dp,
+                                                iconSize = metrics.headerIconSize,
+                                                onClick = onSwitchEngineClick,
+                                            )
+                                        }
+                                    }
+                                    LegacyTopButton.PARTY -> {
+                                        if (onPartyClick != null) {
+                                            PlayerHeaderIconButton(
+                                                icon = Icons.Rounded.Groups,
+                                                contentDescription = stringResource(Res.string.party_title),
+                                                buttonSize = metrics.headerIconSize + 16.dp,
+                                                iconSize = metrics.headerIconSize,
+                                                onClick = onPartyClick,
+                                                tint = if (partyActive) MaterialTheme.colorScheme.primary else Color.White,
+                                            )
+                                        }
+                                    }
+                                    LegacyTopButton.CAST -> {
+                                        if (onCastClick != null) {
+                                            PlayerHeaderIconButton(
+                                                icon = if (isCasting) Icons.Rounded.CastConnected else Icons.Rounded.Cast,
+                                                contentDescription = stringResource(Res.string.player_cast),
+                                                buttonSize = metrics.headerIconSize + 16.dp,
+                                                iconSize = metrics.headerIconSize,
+                                                onClick = onCastClick,
+                                            )
+                                        }
+                                    }
+                                    LegacyTopButton.PICTURE_IN_PICTURE -> {
+                                        if (onPictureInPictureClick != null) {
+                                            PlayerHeaderIconButton(
+                                                icon = Icons.Rounded.PictureInPictureAlt,
+                                                contentDescription = stringResource(Res.string.compose_player_picture_in_picture),
+                                                buttonSize = metrics.headerIconSize + 16.dp,
+                                                iconSize = metrics.headerIconSize,
+                                                onClick = onPictureInPictureClick,
+                                            )
+                                        }
+                                    }
+                                    LegacyTopButton.ORIENTATION -> {
+                                        if (onOrientationToggleClick != null) {
+                                            PlayerHeaderIconButton(
+                                                icon = playerOrientationToggleIcon(isPortraitPlayback),
+                                                contentDescription = stringResource(playerOrientationToggleLabel(isPortraitPlayback)),
+                                                buttonSize = metrics.headerIconSize + 16.dp,
+                                                iconSize = metrics.headerIconSize,
+                                                onClick = onOrientationToggleClick,
+                                            )
+                                        }
+                                    }
+                                    LegacyTopButton.RATE -> {
+                                        if (onRateClick != null) {
+                                            PlayerHeaderIconButton(
+                                                icon = if (userRating != null) Icons.Rounded.Star else Icons.Rounded.StarBorder,
+                                                contentDescription = userRating?.let {
+                                                    stringResource(Res.string.user_rating_action_rated, it)
+                                                } ?: stringResource(Res.string.user_rating_action_rate),
+                                                buttonSize = metrics.headerIconSize + 16.dp,
+                                                iconSize = metrics.headerIconSize,
+                                                onClick = onRateClick,
+                                            )
+                                        }
+                                    }
+                                    LegacyTopButton.PLAYBACK_INFO -> {
+                                        if (onInfoClick != null) {
+                                            PlayerHeaderIconButton(
+                                                icon = Icons.Rounded.Info,
+                                                contentDescription = stringResource(Res.string.compose_player_playback_info),
+                                                buttonSize = metrics.headerIconSize + 16.dp,
+                                                iconSize = metrics.headerIconSize,
+                                                onClick = onInfoClick,
+                                            )
+                                        }
+                                    }
+                                    LegacyTopButton.VIDEO_SETTINGS -> {
+                                        if (onVideoSettingsClick != null) {
+                                            PlayerHeaderIconButton(
+                                                icon = Icons.Rounded.Build,
+                                                contentDescription = stringResource(Res.string.player_action_video_settings),
+                                                buttonSize = metrics.headerIconSize + 16.dp,
+                                                iconSize = metrics.headerIconSize,
+                                                onClick = onVideoSettingsClick,
+                                            )
+                                        }
+                                    }
+                                    LegacyTopButton.LOCK -> {
+                                        PlayerHeaderIconButton(
+                                            icon = if (isLocked) Icons.Rounded.LockOpen else Icons.Rounded.Lock,
+                                            contentDescription = if (isLocked) {
+                                                stringResource(Res.string.compose_player_unlock_controls)
+                                            } else {
+                                                stringResource(Res.string.compose_player_lock_controls)
+                                            },
+                                            buttonSize = metrics.headerIconSize + 16.dp,
+                                            iconSize = metrics.headerIconSize,
+                                            onClick = onLockToggle,
+                                        )
+                                    }
+                                }
+                            }
                         }
                     }
 
@@ -695,149 +799,7 @@ private fun PlayerHeader(
                             onClick = { topMenuExpanded = !topMenuExpanded },
                         )
                     }
-                    val topButtons = PlayerSettingsRepository.uiState.collectAsState().value.legacyTopButtons
-                    topButtons.visibleButtons.forEach { button ->
-                        key(button) {
-                            when (button) {
-                                LegacyTopButton.SUBMIT_INTRO -> {
-                                    if (onSubmitIntroClick != null) {
-                                        PlayerHeaderIconButton(
-                                            icon = Icons.Rounded.Flag,
-                                            contentDescription = stringResource(Res.string.submit_intro_action),
-                                            buttonSize = metrics.headerIconSize + 16.dp,
-                                            iconSize = metrics.headerIconSize,
-                                            onClick = onSubmitIntroClick,
-                                        )
-                                    }
-                                }
-                                LegacyTopButton.EXTERNAL_PLAYER -> {
-                                    if (onOpenInExternalPlayer != null) {
-                                        PlayerHeaderIconButton(
-                                            icon = Icons.AutoMirrored.Rounded.OpenInNew,
-                                            contentDescription = stringResource(Res.string.streams_open_external_player),
-                                            buttonSize = metrics.headerIconSize + 16.dp,
-                                            iconSize = metrics.headerIconSize,
-                                            onClick = onOpenInExternalPlayer,
-                                        )
-                                    }
-                                }
-                                LegacyTopButton.SWITCH_ENGINE -> {
-                                    if (onSwitchEngineClick != null) {
-                                        PlayerHeaderIconButton(
-                                            icon = Icons.Rounded.SwapHoriz,
-                                            contentDescription = stringResource(Res.string.cd_switch_player_engine),
-                                            buttonSize = metrics.headerIconSize + 16.dp,
-                                            iconSize = metrics.headerIconSize,
-                                            onClick = onSwitchEngineClick,
-                                        )
-                                    }
-                                }
-                                LegacyTopButton.PARTY -> {
-                                    if (onPartyClick != null) {
-                                        PlayerHeaderIconButton(
-                                            icon = Icons.Rounded.Groups,
-                                            contentDescription = stringResource(Res.string.party_title),
-                                            buttonSize = metrics.headerIconSize + 16.dp,
-                                            iconSize = metrics.headerIconSize,
-                                            onClick = onPartyClick,
-                                            tint = if (partyActive) MaterialTheme.colorScheme.primary else Color.White,
-                                        )
-                                    }
-                                }
-                                LegacyTopButton.CAST -> {
-                                    if (onCastClick != null) {
-                                        PlayerHeaderIconButton(
-                                            icon = if (isCasting) Icons.Rounded.CastConnected else Icons.Rounded.Cast,
-                                            contentDescription = stringResource(Res.string.player_cast),
-                                            buttonSize = metrics.headerIconSize + 16.dp,
-                                            iconSize = metrics.headerIconSize,
-                                            onClick = onCastClick,
-                                        )
-                                    }
-                                }
-                                LegacyTopButton.PICTURE_IN_PICTURE -> {
-                                    if (onPictureInPictureClick != null) {
-                                        PlayerHeaderIconButton(
-                                            icon = Icons.Rounded.PictureInPictureAlt,
-                                            contentDescription = stringResource(Res.string.compose_player_picture_in_picture),
-                                            buttonSize = metrics.headerIconSize + 16.dp,
-                                            iconSize = metrics.headerIconSize,
-                                            onClick = onPictureInPictureClick,
-                                        )
-                                    }
-                                }
-                                LegacyTopButton.ORIENTATION -> {
-                                    if (onOrientationToggleClick != null) {
-                                        PlayerHeaderIconButton(
-                                            icon = playerOrientationToggleIcon(isPortraitPlayback),
-                                            contentDescription = stringResource(playerOrientationToggleLabel(isPortraitPlayback)),
-                                            buttonSize = metrics.headerIconSize + 16.dp,
-                                            iconSize = metrics.headerIconSize,
-                                            onClick = onOrientationToggleClick,
-                                        )
-                                    }
-                                }
-                                LegacyTopButton.RATE -> {
-                                    if (onRateClick != null) {
-                                        PlayerHeaderIconButton(
-                                            icon = if (userRating != null) Icons.Rounded.Star else Icons.Rounded.StarBorder,
-                                            contentDescription = userRating?.let {
-                                                stringResource(Res.string.user_rating_action_rated, it)
-                                            } ?: stringResource(Res.string.user_rating_action_rate),
-                                            buttonSize = metrics.headerIconSize + 16.dp,
-                                            iconSize = metrics.headerIconSize,
-                                            onClick = onRateClick,
-                                        )
-                                    }
-                                }
-                                LegacyTopButton.PLAYBACK_INFO -> {
-                                    if (onInfoClick != null) {
-                                        PlayerHeaderIconButton(
-                                            icon = Icons.Rounded.Info,
-                                            contentDescription = stringResource(Res.string.compose_player_playback_info),
-                                            buttonSize = metrics.headerIconSize + 16.dp,
-                                            iconSize = metrics.headerIconSize,
-                                            onClick = onInfoClick,
-                                        )
-                                    }
-                                }
-                                LegacyTopButton.VIDEO_SETTINGS -> {
-                                    if (onVideoSettingsClick != null) {
-                                        PlayerHeaderIconButton(
-                                            icon = Icons.Rounded.Build,
-                                            contentDescription = stringResource(Res.string.player_action_video_settings),
-                                            buttonSize = metrics.headerIconSize + 16.dp,
-                                            iconSize = metrics.headerIconSize,
-                                            onClick = onVideoSettingsClick,
-                                        )
-                                    }
-                                }
-                                LegacyTopButton.LOCK -> {
-                                    PlayerHeaderIconButton(
-                                        icon = if (isLocked) Icons.Rounded.LockOpen else Icons.Rounded.Lock,
-                                        contentDescription = if (isLocked) {
-                                            stringResource(Res.string.compose_player_unlock_controls)
-                                        } else {
-                                            stringResource(Res.string.compose_player_lock_controls)
-                                        },
-                                        buttonSize = metrics.headerIconSize + 16.dp,
-                                        iconSize = metrics.headerIconSize,
-                                        onClick = onLockToggle,
-                                    )
-                                }
-                            }
-                        }
-                    }
-                    NuvioBackButton(
-                        onClick = onBack,
-                        modifier = Modifier.playerLiquidGlass(CircleShape, refractionHeight = 6.dp, refractionAmount = 8.dp),
-                        shape = CircleShape,
-                        containerColor = Color.Transparent,
-                        contentColor = Color.White,
-                        buttonSize = metrics.headerIconSize + 16.dp,
-                        iconSize = metrics.headerIconSize,
-                        contentDescription = stringResource(Res.string.compose_player_close),
-                    )
+
                 }
             }
         }
