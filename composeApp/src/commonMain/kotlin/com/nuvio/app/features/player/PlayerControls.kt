@@ -5,7 +5,7 @@ import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.expandHorizontally
 import androidx.compose.animation.shrinkHorizontally
-import androidx.compose.material.icons.filled.MoreVert
+import androidx.compose.material.icons.rounded.MoreVert
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
@@ -686,14 +686,15 @@ private fun PlayerHeader(
                     }
 
                     // Rotating 3-dot toggle button
-                    PlayerHeaderIconButton(
-                        icon = Icons.Rounded.MoreVert,
-                        contentDescription = "More Controls",
-                        buttonSize = metrics.headerIconSize + 16.dp,
-                        iconSize = metrics.headerIconSize,
-                        onClick = { topMenuExpanded = !topMenuExpanded },
-                        modifier = Modifier.graphicsLayer { rotationZ = rotationAngle }
-                    )
+                    Box(modifier = Modifier.graphicsLayer { rotationZ = rotationAngle }) {
+                        PlayerHeaderIconButton(
+                            icon = Icons.Rounded.MoreVert,
+                            contentDescription = "More Controls",
+                            buttonSize = metrics.headerIconSize + 16.dp,
+                            iconSize = metrics.headerIconSize,
+                            onClick = { topMenuExpanded = !topMenuExpanded },
+                        )
+                    }
                     val topButtons = PlayerSettingsRepository.uiState.collectAsState().value.legacyTopButtons
                     topButtons.visibleButtons.forEach { button ->
                         key(button) {
