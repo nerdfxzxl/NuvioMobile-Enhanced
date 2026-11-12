@@ -40,6 +40,9 @@ jobs:
       run: chmod +x gradlew
 
     - name: Build Debug APK with Gradle
+      env:
+        NUVIO_SUPABASE_URL: ${{ secrets.NUVIO_SUPABASE_URL }}
+        NUVIO_SUPABASE_ANON_KEY: ${{ secrets.NUVIO_SUPABASE_ANON_KEY }}
       run: ./gradlew assembleDebug -Pnuvio.android.distribution=full
 
     - name: Upload APK Artifact
