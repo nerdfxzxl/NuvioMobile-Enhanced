@@ -46,6 +46,16 @@ jobs:
       run: |
         test -n "$NUVIO_SUPABASE_URL" && echo "Supabase URL: present" || echo "Supabase URL: MISSING"
         test -n "$NUVIO_SUPABASE_ANON_KEY" && echo "Supabase key: present" || echo "Supabase key: MISSING"
+        echo "Supabase key length: ${#NUVIO_SUPABASE_ANON_KEY}"
+
+        case "$NUVIO_SUPABASE_ANON_KEY" in
+          sb_publishable_*) echo "Supabase key type: publishable" ;;
+          eyJ*) echo "Supabase key type: legacy JWT" ;;
+          *) echo "Supabase key type: unknown" ;;
+        esac
+
+        echo "Supabase URL host:"
+        echo "$NUVIO_SUPABASE_URL" | sed -E 's#^https?://([^/]+).*#\1#'
         ./gradlew assembleDebug -Pnuvio.android.distribution=full
 
     - name: Upload APK Artifact
