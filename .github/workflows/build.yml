@@ -43,7 +43,10 @@ jobs:
       env:
         NUVIO_SUPABASE_URL: ${{ secrets.NUVIO_SUPABASE_URL }}
         NUVIO_SUPABASE_ANON_KEY: ${{ secrets.NUVIO_SUPABASE_ANON_KEY }}
-      run: ./gradlew assembleDebug -Pnuvio.android.distribution=full
+      run: |
+        test -n "$NUVIO_SUPABASE_URL" && echo "Supabase URL: present" || echo "Supabase URL: MISSING"
+        test -n "$NUVIO_SUPABASE_ANON_KEY" && echo "Supabase key: present" || echo "Supabase key: MISSING"
+        ./gradlew assembleDebug -Pnuvio.android.distribution=full
 
     - name: Upload APK Artifact
       uses: actions/upload-artifact@v4
